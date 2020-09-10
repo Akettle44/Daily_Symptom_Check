@@ -9,6 +9,7 @@
 from __future__ import print_function
 import pickle
 import os.path
+from datetime import date
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -40,31 +41,30 @@ def main():
 
     subject_line = 'UCI Student Daily Symptom Monitoring'
     #Find email via name (time isn't accurate enough)
-    raw_message_list = service.users().messages().list(userId='me').execute()
+    raw_message_list = service.users().messages().list(userId='me', q="subject:UCI Student Daily Symptom Monitoring").execute()
     messages = raw_message_list.get('messages', [])
-
-    #iterate over messages via id and look for labels
     for message in messages:
-        curr_message = service.users().messages().get(userId='me', id=message['id']).execute()
+        curr_message = service.users().messages().get(userId='me', id=message['id'], format='metadata', metadataHeaders=['Subject', 'Date']).execute()
+
+    symp_message_list = []
+    #iterate over messages looking for subject line
+    for message in messages:
+        curr_message = service.users().messages().get(userId='me', id=message['id'], format='metadata', metadataHeaders=['Subject', 'Date']).execute()
         payload = curr_message.get('payload')
         headers = payload.get('headers', [])
-        #print(headers)
         for header in headers:
             if(header['name'] == 'Subject'):
                 name = header['value']
                 if(name == subject_line):
-                    print(name)
-        #sender = headers
-        #print(sender)
+                    symp_message_list.append(curr_message) #gets all recent emails with that subject line
 
-#    if(messages):
-#        for message in messages:
-#            print(message['threadId']) 
-#    else:
-#        print("No messages were found")
+    for symp_message in symp_message_list:
+        print(symp_message['labelIds'])
 
-    #Find Not on campus today
-
+#Find Not on campus today
+#    symp_payload = symp_message.get('payload')
+#    symp_headers = symp_payload.get('headers', [])
+#    print(symp_headers)
     #Click the above
 
     #Send email
