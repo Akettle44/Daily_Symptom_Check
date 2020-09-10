@@ -9,7 +9,7 @@
 from __future__ import print_function
 import pickle
 import os.path
-from datetime import date
+from email.utils import formatdate
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -39,32 +39,31 @@ def main():
 
     service = build('gmail', 'v1', credentials=creds)
 
-    subject_line = 'UCI Student Daily Symptom Monitoring'
-    #Find email via name (time isn't accurate enough)
+    #Filter for desired email
+
+    desired_message_id = None
+    #getting current date
+    curr_date = formatdate(localtime=True)
+    _, curr_day, curr_month, curr_year, _, _ = curr_date.split() #ignoring time and day of the week
+
     raw_message_list = service.users().messages().list(userId='me', q="subject:UCI Student Daily Symptom Monitoring").execute()
     messages = raw_message_list.get('messages', [])
     for message in messages:
-        curr_message = service.users().messages().get(userId='me', id=message['id'], format='metadata', metadataHeaders=['Subject', 'Date']).execute()
+        curr_message = service.users().messages().get(userId='me', id=message['id'], format='metadata', metadataHeaders=['Date']).execute()
+        email_date = ((curr_message.get('payload').get('headers'))[0])['value'] #can hardcode 0 because there is only one element in the list
+        _, day, month, year, _, _, _ = email_date.split() #ignoring time and day of the week
+        if(int(day) < 10): #incredibly lazy fix to mismatched day formatting
+            day = '0' + day
+        if((curr_day == day) and (curr_month == month) and (curr_year==year)):
+            desired_message_id = message['id']
+            break
 
-    symp_message_list = []
-    #iterate over messages looking for subject line
-    for message in messages:
-        curr_message = service.users().messages().get(userId='me', id=message['id'], format='metadata', metadataHeaders=['Subject', 'Date']).execute()
-        payload = curr_message.get('payload')
-        headers = payload.get('headers', [])
-        for header in headers:
-            if(header['name'] == 'Subject'):
-                name = header['value']
-                if(name == subject_line):
-                    symp_message_list.append(curr_message) #gets all recent emails with that subject line
+    #open email and find "not on campus section"
+    message = service.users().messages().get(userId='me', id=desired_message_id).execute()
+    raw_message = message.get('payload').get('parts', []) 
+    print(raw_message)
 
-    for symp_message in symp_message_list:
-        print(symp_message['labelIds'])
 
-#Find Not on campus today
-#    symp_payload = symp_message.get('payload')
-#    symp_headers = symp_payload.get('headers', [])
-#    print(symp_headers)
     #Click the above
 
     #Send email
