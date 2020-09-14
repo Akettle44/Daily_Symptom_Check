@@ -10,6 +10,7 @@ from __future__ import print_function
 import pickle
 import base64
 import os.path
+from bs4 import BeautifulSoup
 from email.utils import formatdate
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -58,25 +59,16 @@ def main():
             desired_message_id = message['id']
             break
 
-    #open email and find "not on campus section"
+    #open email and convert base64url to raw html 
     message = service.users().messages().get(userId='me',id=desired_message_id).execute()
-    #message = service.users().messages().get(userId='me',format='raw', id=desired_message_id).execute()
     raw_message = message.get('payload').get('parts')
     filtered_message = raw_message[0] #first attachment is the link
     unfilt_b64 = (filtered_message['body'])['data']
     raw_html = base64.urlsafe_b64decode(unfilt_b64)
-    print(raw_html)
 
-
-    
-    #
-    #for dtype in raw_message:
-    #    print(dtype)
-    #    print('\n')
-    #    message_link = raw_message('attachmentId')
-    #    print(message_link)
-
-    #Click the above
+    #find link for not on campus
+    org_html = BeautifulSoup(raw_html, features='html.parser') 
+    email_link = org_html.a['href']
 
     #Send email
 
