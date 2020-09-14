@@ -1,7 +1,7 @@
 #!usr/bin/python3
 #Python script for completing daily symptom checking
-#Created using gmails api with code borrowed from the "quickstart" example
-#Written by Andrew Kettle, Last edit: 09/09/2020
+#Created using gmails api with credential code borrowed from the "quickstart" example
+#Written by Andrew Kettle, Last edit: 09/14/2020
 
 #ignoring incorrect pylint error
 #pylint:disable=E1101 
@@ -11,6 +11,8 @@ import pickle
 import base64
 import webbrowser
 import os.path
+import urllib.parse
+from email.mime.text import MIMEText
 from bs4 import BeautifulSoup
 from email.utils import formatdate
 from googleapiclient.discovery import build
@@ -67,22 +69,24 @@ def main():
     unfilt_b64 = (filtered_message['body'])['data']
     raw_html = base64.urlsafe_b64decode(unfilt_b64)
 
-    #find link for not on campus
+    #find link for not on campus, decode the web format into recip, subject, body
     org_html = BeautifulSoup(raw_html, features='html.parser') 
-    #email_link = org_html.a['href']
-    print(org_html.a['href'])
-    email_link = (org_html.a['href']).encode('UTF-8')
+    email_link = org_html.a['href'] #getting the reply url from the formatting html
+    link = urllib.parse.unquote(email_link) #removing web formatting from the link
+    flink1 = link.split('?subject=') #splitting to find subject and recipient
+    recip = flink1[0].replace('mailto:', '') 
+    flink2 = flink1[1].split('&body=') #splitting to find the body of the email
+    subject = flink2[0]
+    body = flink2[1]
 
-    body = {
-        'raw' : (base64.urlsafe_b64encode(email_link)).decode(),
-        'labelIds' : '["SENT"]',
-        'threadid' : message.get('threadId')
-    }
-    ret_message = service.users().messages().send(userId='me',body=body).execute()
+    #create reply
+    send_message = MIMEText(body)
+    send_message['to'] = recip
+    send_message['subject'] = subject
+    raw_send_message = base64.urlsafe_b64encode((send_message.as_string()).encode('UTF-8'))
+    raw_msg = {'raw': raw_send_message.decode('UTF-8')}
 
-    #Send email
-
-    #terminate
+    ret_message = service.users().messages().send(userId='me',body=raw_msg).execute()
 
 
 #main convention in python
