@@ -5,7 +5,7 @@ The school I am attending has started sending emails about daily symptom checks 
 
 Environment: Python 3.6.9 <br/>
 Necessary Packages: pickle, base64, os.path, urllib.parse, MIMEText, BeautifulSoup, formatdate <br/>
-This script interfaces with gmail's api (since our school's email is run through gmail), so various packages from gmail will also be necessary. <br/><br/>
+This script interfaces with gmail's api (since our school's email is run through gmail), so various packages from gmail will also be necessary. <br/>
 OS: Anything with a python interpreter (only tested on elementary OS) <br/>
 
 ## Installing pacakages
