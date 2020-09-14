@@ -9,6 +9,7 @@
 from __future__ import print_function
 import pickle
 import base64
+import webbrowser
 import os.path
 from bs4 import BeautifulSoup
 from email.utils import formatdate
@@ -40,13 +41,13 @@ def main():
             pickle.dump(creds, token)
 
     service = build('gmail', 'v1', credentials=creds)
-    #Filter for desired email
 
     desired_message_id = None
     #getting current date
     curr_date = formatdate(localtime=True)
     _, curr_day, curr_month, curr_year, _, _ = curr_date.split() #ignoring time and day of the week
 
+    #Filter for desired email
     raw_message_list = service.users().messages().list(userId='me', q="subject:UCI Student Daily Symptom Monitoring").execute()
     messages = raw_message_list.get('messages', [])
     for message in messages:
@@ -68,7 +69,16 @@ def main():
 
     #find link for not on campus
     org_html = BeautifulSoup(raw_html, features='html.parser') 
-    email_link = org_html.a['href']
+    #email_link = org_html.a['href']
+    print(org_html.a['href'])
+    email_link = (org_html.a['href']).encode('UTF-8')
+
+    body = {
+        'raw' : (base64.urlsafe_b64encode(email_link)).decode(),
+        'labelIds' : '["SENT"]',
+        'threadid' : message.get('threadId')
+    }
+    ret_message = service.users().messages().send(userId='me',body=body).execute()
 
     #Send email
 
