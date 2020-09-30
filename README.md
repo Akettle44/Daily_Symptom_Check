@@ -26,9 +26,10 @@ In the python interpreter
 
 From bash 
 ```
-python3 ./dsc.py
+python3 dsc.py
 ```
-If running it via bash fails, make sure that the first line ```#!usr/bin/python3``` is reflective of where your python source is installed.
+If running it via bash fails, make sure that the first line ```#!usr/bin/python3``` is reflective of where your python source is installed. <br/>
+There is also a bash script called (run.sh) that I use to run the script on a crontab every morning. However, that path is specific to my computer so run.sh will have to be altered for your own use. 
 
 
 
